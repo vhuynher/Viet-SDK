@@ -401,7 +401,7 @@ This section maps the take-home criteria to concrete deliverables in this reposi
 |-------------|---------------------|
 | **Code quality and readability** | Layered modules, strict TypeScript, consistent naming, small focused files |
 | **Filtering** | Typed `filter` objects + `query-builder` for Mongo-style params (Section 5) |
-| **Testing suite** | Vitest; 28 unit tests across query builder, HTTP client, client-sort, and resources |
+| **Testing suite** | Vitest; 30 unit tests across query builder, HTTP client, client-sort, and resources |
 | **Architecture, testing, documentation** | This document, README, and test layout |
 | **Extensibility** | Resource-oriented design + `BaseResource` (Section 7) |
 | **README for SDK users** | `README.md` — install, usage, API reference, test/demo commands |
@@ -422,7 +422,8 @@ src/
 ├── config.ts             # options and defaults
 ├── http/
 │   ├── http-client.ts
-│   └── query-builder.ts
+│   ├── query-builder.ts
+│   └── client-sort.ts
 ├── resources/
 │   ├── base-resource.ts
 │   ├── movies.ts
@@ -430,7 +431,9 @@ src/
 ├── types/
 └── errors/
 tests/                    # unit tests + fixtures
-demo/demo.ts              # local demonstration
+demo/
+│   ├── demo.ts           # local demonstration
+│   └── diagnose.ts       # live API smoke checks
 design.md                 # this document
 README.md                 # user-facing documentation
 ```

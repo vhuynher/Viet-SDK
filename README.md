@@ -25,11 +25,14 @@ const client = new LotrClient({
 const movies = await client.movies.list({
   filter: { runtimeInMinutes: { gte: 160 } },
   limit: 5,
+  sort: { rottenTomatoesScore: 'desc' },
 });
 
 const movie = await client.movies.get('5cd95395de30eff6ebccde5b');
-const quotes = await client.movies.quotes(movie._id);
+const quotes = await client.movies.quotes(movie._id, { limit: 5 });
 ```
+
+After building, consumers import from the package entry: `import { LotrClient } from 'lotr-sdk'`.
 
 ## API reference
 
@@ -40,6 +43,7 @@ new LotrClient({
   apiKey: string;           // required
   baseUrl?: string;         // default: https://the-one-api.dev/v2
   timeoutMs?: number;       // default: 10000
+  fetch?: typeof fetch;     // injectable (e.g. for tests or logging)
 })
 ```
 
@@ -49,9 +53,9 @@ new LotrClient({
 |--------|------|-------------|
 | `movies.list(options?)` | `GET /movie` | Paginated movie list |
 | `movies.listAll(options?)` | `GET /movie` | All pages merged |
-| `movies.get(id)` | `GET /movie/{id}` | Single movie |
-| `movies.quotes(movieId, options?)` | `GET /movie/{id}/quote` | Quotes for a movie |
-| `movies.quotesByName(name)` | multiple | Find movie by name, return quotes |
+| `movies.get(id)` | `GET /movie/{id}` | Single movie (`id` = movie `_id`) |
+| `movies.quotes(movieId, options?)` | `GET /movie/{id}/quote` | Quotes for a movie (`movieId` = movie `_id`) |
+| `movies.quotesByName(name)` | multiple | Find movie by name, return first page of quotes |
 
 ### Quotes
 
@@ -59,63 +63,111 @@ new LotrClient({
 |--------|------|-------------|
 | `quotes.list(options?)` | `GET /quote` | Paginated quote list |
 | `quotes.listAll(options?)` | `GET /quote` | All pages merged |
-| `quotes.get(id)` | `GET /quote/{id}` | Single quote |
+| `quotes.get(id)` | `GET /quote/{id}` | Single quote (`id` = quote `_id`) |
 
 ### Filtering
 
+Filters are sent to the API as [Mongo-style query parameters](https://the-one-api.dev/documentation). Use typed `filter` objects:
+
 ```typescript
+// Movies — comparisons, regex, exact match
 await client.movies.list({
   page: 1,
   limit: 10,
-  sort: { name: 'asc' },
   filter: {
     runtimeInMinutes: { gte: 160 },
     academyAwardWins: { gt: 0 },
     name: /Fellowship/i,
-    raw: { 'budgetInMillions<': 100 }, // escape hatch
+    raw: { 'budgetInMillions<': 100 }, // escape hatch for unmodeled params
   },
 });
 
+// Quotes — filter by movie id, character id, or dialog regex
 await client.quotes.list({
   filter: {
     movie: '5cd95395de30eff6ebccde5b',
+    character: '5cd99d09430f97647ee03669',
     dialog: /ring/i,
   },
 });
 ```
 
+### Sorting
+
+Pass `sort` on `list`, `listAll`, `movies.quotes`, etc.:
+
+```typescript
+await client.movies.listAll({ sort: { academyAwardWins: 'desc' } });
+
+await client.quotes.list({
+  filter: { dialog: /ring/i },
+  sort: { dialog: 'asc' },
+});
+```
+
+**Note:** The live API returns HTTP 500 for server-side `sort` on `/movie` and `/quote`. The SDK strips `sort` from the request and **sorts results client-side** so callers can still use the option.
+
+| Method | Sort scope |
+|--------|------------|
+| `list({ sort })` | Current page only |
+| `listAll({ sort })` | Full dataset after all pages are fetched |
+
+Useful movie sort fields: `name`, `runtimeInMinutes`, `rottenTomatoesScore`, `academyAwardWins`, `academyAwardNominations`.  
+For quotes, `dialog` sorts alphabetically; `movie` / `character` sort by ObjectId string.
+
+### Pagination and rate limits
+
+The API allows **100 requests per 10 minutes**. `listAll()` issues one request per page (100 items per page) — use sparingly on large collections like quotes.
+
 ### Errors
 
 ```typescript
-import { AuthenticationError, NotFoundError, RateLimitError } from './src/index.js';
+import { AuthenticationError, NotFoundError, RateLimitError, ApiError } from './src/index.js';
 
 try {
   await client.movies.get('invalid-id');
 } catch (error) {
-  if (error instanceof NotFoundError) { /* ... */ }
+  if (error instanceof NotFoundError) { /* empty docs on get */ }
+  if (error instanceof AuthenticationError) { /* 401 */ }
+  if (error instanceof RateLimitError) { /* 429 */ }
+  if (error instanceof ApiError) { /* other HTTP failures, timeouts */ }
 }
 ```
 
-## Scripts
+## Test the SDK
+
+**Unit tests** (mocked HTTP — no API key, no network):
 
 ```bash
-npm test          # run unit tests
-npm run typecheck # TypeScript check
-npm run build     # compile to dist/
-npm run demo      # live API demo (requires LOTR_API_KEY)
-npm run diagnose  # step-by-step API smoke checks
+npm test
+npm run typecheck
 ```
 
-Run the demo (reads `LOTR_API_KEY` from `.env` if present):
+**Live smoke test** (requires `LOTR_API_KEY` in `.env`):
 
 ```bash
-npm run demo
+npm run diagnose   # step-by-step checks for all five endpoints
+npm run demo       # feature walkthrough
+```
+
+Copy `.env.example` to `.env` before running live scripts:
+
+```bash
+cp .env.example .env
+# edit .env — set LOTR_API_KEY=your_key
+npm run diagnose
 ```
 
 Or pass the key inline:
 
 ```bash
 LOTR_API_KEY=your_key npm run demo
+```
+
+**Build** compiled output to `dist/`:
+
+```bash
+npm run build
 ```
 
 ## Architecture

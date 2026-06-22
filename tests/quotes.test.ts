@@ -64,4 +64,41 @@ describe('QuotesResource', () => {
 
     await expect(client.quotes.get('missing')).rejects.toBeInstanceOf(NotFoundError);
   });
+
+  it('sends filter params to the API without sort', async () => {
+    const fetchMock = createMockFetch({
+      '/quote?limit=10&movie=5cd95395de30eff6ebccde5b&dialog=/ring/i': loadFixture('quotes-list.json'),
+    });
+
+    const client = new LotrClient({ apiKey: 'test-key', fetch: fetchMock });
+
+    const result = await client.quotes.list({
+      limit: 10,
+      filter: {
+        movie: '5cd95395de30eff6ebccde5b',
+        dialog: /ring/i,
+      },
+      sort: { dialog: 'asc' },
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain('sort=');
+    expect(result.docs).toHaveLength(2);
+  });
+
+  it('applies sort client-side without sending sort to the API', async () => {
+    const fetchMock = createMockFetch({
+      '/quote?limit=10': loadFixture('quotes-list.json'),
+    });
+
+    const client = new LotrClient({ apiKey: 'test-key', fetch: fetchMock });
+
+    const result = await client.quotes.list({
+      limit: 10,
+      sort: { dialog: 'desc' },
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain('sort=');
+    expect(result.docs[0]?.dialog).toBe('You shall not pass!');
+    expect(result.docs[1]?.dialog).toBe('One ring to rule them all.');
+  });
 });
