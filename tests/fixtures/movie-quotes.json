@@ -1,0 +1,23 @@
+{
+  "docs": [
+    {
+      "_id": "5cd96e05de30eff6ebcce7e9",
+      "dialog": "One ring to rule them all.",
+      "movie": "5cd95395de30eff6ebccde5b",
+      "character": "5cd99d09430f97647ee03669",
+      "id": "5cd96e05de30eff6ebcce7e9"
+    },
+    {
+      "_id": "5cd96e05de30eff6ebcce7ea",
+      "dialog": "You shall not pass!",
+      "movie": "5cd95395de30eff6ebccde5b",
+      "character": "5cd99d09430f97647ee0366a",
+      "id": "5cd96e05de30eff6ebcce7ea"
+    }
+  ],
+  "total": 2,
+  "limit": 10,
+  "offset": 0,
+  "page": 1,
+  "pages": 1
+}

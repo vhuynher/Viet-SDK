@@ -1,0 +1,16 @@
+{
+  "docs": [
+    {
+      "_id": "5cd96e05de30eff6ebcce7e9",
+      "dialog": "One ring to rule them all.",
+      "movie": "5cd95395de30eff6ebccde5b",
+      "character": "5cd99d09430f97647ee03669",
+      "id": "5cd96e05de30eff6ebcce7e9"
+    }
+  ],
+  "total": 1,
+  "limit": 1000,
+  "offset": 0,
+  "page": 1,
+  "pages": 1
+}
