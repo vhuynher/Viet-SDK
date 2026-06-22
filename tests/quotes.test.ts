@@ -101,4 +101,30 @@ describe('QuotesResource', () => {
     expect(result.docs[0]?.dialog).toBe('You shall not pass!');
     expect(result.docs[1]?.dialog).toBe('One ring to rule them all.');
   });
+
+  it('fetches a random quote from GET /quotes/random/', async () => {
+    const client = new LotrClient({
+      apiKey: 'test-key',
+      fetch: createMockFetch({ '/quotes/random/': loadFixture('quote-single.json') }),
+    });
+
+    const quote = await client.quotes.random();
+    expect(quote.dialog).toBe('One ring to rule them all.');
+  });
+
+  it('falls back to offset on GET /quote when random endpoint has no docs', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    const fetchMock = createMockFetch({
+      '/quotes/random/': {},
+      '/quote?limit=1': loadFixture('quotes-list.json'),
+      '/quote?limit=1&offset=0': loadFixture('quotes-list.json'),
+    });
+
+    const client = new LotrClient({ apiKey: 'test-key', fetch: fetchMock });
+    const quote = await client.quotes.random();
+
+    expect(quote.dialog).toBe('One ring to rule them all.');
+    expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('/quote?');
+  });
 });

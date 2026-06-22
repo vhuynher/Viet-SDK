@@ -30,6 +30,10 @@ const movies = await client.movies.list({
 
 const movie = await client.movies.get('5cd95395de30eff6ebccde5b');
 const quotes = await client.movies.quotes(movie._id, { limit: 5 });
+
+// Random quote from one film, or from the whole API
+const fromMovie = await client.movies.randomQuote(movie._id);
+const anywhere = await client.quotes.random(); // GET /quotes/random/
 ```
 
 After building, consumers import from the package entry: `import { LotrClient } from 'lotr-sdk'`.
@@ -56,6 +60,8 @@ new LotrClient({
 | `movies.get(id)` | `GET /movie/{id}` | Single movie (`id` = movie `_id`) |
 | `movies.quotes(movieId, options?)` | `GET /movie/{id}/quote` | Quotes for a movie (`movieId` = movie `_id`) |
 | `movies.quotesByName(name)` | multiple | Find movie by name, return first page of quotes |
+| `movies.randomQuote(movieId)` | `GET /movie/{id}/quote` ×2 | Random quote from one film (random `offset`) |
+| `movies.randomQuoteByName(name)` | multiple | Find movie by name, then `randomQuote` |
 
 ### Quotes
 
@@ -64,6 +70,7 @@ new LotrClient({
 | `quotes.list(options?)` | `GET /quote` | Paginated quote list |
 | `quotes.listAll(options?)` | `GET /quote` | All pages merged |
 | `quotes.get(id)` | `GET /quote/{id}` | Single quote (`id` = quote `_id`) |
+| `quotes.random()` | `GET /quotes/random/` | One random quote (falls back to `GET /quote` + offset) |
 
 ### Filtering
 

@@ -105,6 +105,9 @@ The assessment allows SDK methods that do not map 1:1 to a single endpoint:
 |------------|----------|
 | `movies.listAll(options?)` | Repeated `list()` calls until all pages are retrieved |
 | `movies.quotesByName(name)` | `movies.list({ filter: { name }, limit: 1 })` then `movies.quotes(movieId)` |
+| `movies.randomQuote(movieId)` | Probe `total` on `/movie/{id}/quote`, then fetch one quote at random `offset` |
+| `movies.randomQuoteByName(name)` | Resolve movie by name, then `randomQuote` |
+| `quotes.random()` | `GET /quotes/random/` with fallback to random `offset` on `GET /quote` |
 
 These combine API calls for ergonomics but do not cache or precompute data locally.
 
@@ -401,7 +404,7 @@ This section maps the take-home criteria to concrete deliverables in this reposi
 |-------------|---------------------|
 | **Code quality and readability** | Layered modules, strict TypeScript, consistent naming, small focused files |
 | **Filtering** | Typed `filter` objects + `query-builder` for Mongo-style params (Section 5) |
-| **Testing suite** | Vitest; 30 unit tests across query builder, HTTP client, client-sort, and resources |
+| **Testing suite** | Vitest; 33 unit tests across query builder, HTTP client, client-sort, and resources |
 | **Architecture, testing, documentation** | This document, README, and test layout |
 | **Extensibility** | Resource-oriented design + `BaseResource` (Section 7) |
 | **README for SDK users** | `README.md` — install, usage, API reference, test/demo commands |

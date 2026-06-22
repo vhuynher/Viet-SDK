@@ -127,4 +127,33 @@ describe('MoviesResource', () => {
     const quotes = await client.movies.quotesByName('The Two Towers');
     expect(quotes).toHaveLength(2);
   });
+
+  it('randomQuote picks a quote by random offset', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const fetchMock = createMockFetch({
+      '/movie/5cd95395de30eff6ebccde5b/quote?limit=1': {
+        docs: [{ _id: 'a', id: 'a', dialog: 'First', movie: '5cd95395de30eff6ebccde5b', character: 'c1' }],
+        total: 2,
+        limit: 1,
+        offset: 0,
+        page: 1,
+        pages: 2,
+      },
+      '/movie/5cd95395de30eff6ebccde5b/quote?limit=1&offset=1': {
+        docs: [{ _id: 'b', id: 'b', dialog: 'Second', movie: '5cd95395de30eff6ebccde5b', character: 'c2' }],
+        total: 2,
+        limit: 1,
+        offset: 1,
+        page: 1,
+        pages: 2,
+      },
+    });
+
+    const client = new LotrClient({ apiKey: 'test-key', fetch: fetchMock });
+    const quote = await client.movies.randomQuote('5cd95395de30eff6ebccde5b');
+
+    expect(quote.dialog).toBe('Second');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

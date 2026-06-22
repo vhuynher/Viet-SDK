@@ -42,6 +42,14 @@ async function main() {
   }
   movieQuotes.docs.forEach((q) => console.log(`- ${q.dialog.slice(0, 80)}...`));
 
+  console.log('\n--- Random quote from that movie ---');
+  const randomFromMovie = await client.movies.randomQuote(movieId);
+  console.log(randomFromMovie.dialog.slice(0, 80) + '...');
+
+  console.log('\n--- Random quote (any movie) ---');
+  const randomQuote = await client.quotes.random();
+  console.log(randomQuote.dialog.slice(0, 80) + '...');
+
   console.log('\n--- Filter quotes by dialog ---');
   const filtered = await client.quotes.list({
     filter: { dialog: /ring/i },

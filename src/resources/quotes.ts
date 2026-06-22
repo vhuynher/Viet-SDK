@@ -1,5 +1,6 @@
 import { clientSortDocs, omitSort } from '../http/client-sort.js';
 import type { HttpClient } from '../http/http-client.js';
+import { NotFoundError } from '../errors/index.js';
 import type { QuoteFilters, QuoteListOptions } from '../types/filters.js';
 import type { PaginatedResponse } from '../types/pagination.js';
 import type { Quote } from '../types/quote.js';
@@ -23,4 +24,50 @@ export class QuotesResource extends BaseResource<Quote, QuoteFilters> {
     const all = await super.listAll(apiOptions);
     return clientSortDocs(all, sort);
   }
+
+  /**
+   * One random quote from the entire API.
+   * Tries GET /quotes/random/ first; falls back to random offset on GET /quote.
+   */
+  async random(): Promise<Quote> {
+    const response = await this.http.get<unknown>('/quotes/random/');
+    const fromEndpoint = parseRandomQuoteResponse(response);
+    if (fromEndpoint) {
+      return fromEndpoint;
+    }
+
+    return this.randomViaOffset();
+  }
+
+  private async randomViaOffset(): Promise<Quote> {
+    const probe = await this.list({ limit: 1 });
+    if (probe.total === 0) {
+      throw new NotFoundError('Quote', 'random');
+    }
+
+    const offset = Math.floor(Math.random() * probe.total);
+    const result = await this.list({ limit: 1, offset });
+    const quote = result.docs[0];
+    if (!quote) {
+      throw new NotFoundError('Quote', 'random');
+    }
+
+    return quote;
+  }
+}
+
+function parseRandomQuoteResponse(body: unknown): Quote | undefined {
+  if (!body || typeof body !== 'object') {
+    return undefined;
+  }
+
+  if ('docs' in body && Array.isArray((body as PaginatedResponse<Quote>).docs)) {
+    return (body as PaginatedResponse<Quote>).docs[0];
+  }
+
+  if ('dialog' in body && typeof (body as Quote).dialog === 'string') {
+    return body as Quote;
+  }
+
+  return undefined;
 }
